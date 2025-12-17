@@ -1,0 +1,31 @@
+:root {
+  --bg-primary: #1a1816;
+  --bg-secondary: #252220;
+  --bg-input: #1e1c1a;
+  --border: #2a2725;
+  --border-active: #3a3735;
+  --text-primary: #e8e4df;
+  --text-secondary: #c5c1bc;
+  --text-muted: #8a8480;
+  --text-dim: #5a5755;
+  --accent: #c9a86c;
+  --success: #7a9f6a;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+#root {
+  min-height: 100vh;
+}

@@ -1,14 +1,16 @@
-# Dealtrail / TraceWriter
+# DealTrail
 
 ## What
 
-**TraceWriter** is an email annotation tool for capturing "off-screen actions" in real estate transactions - the work that happens between emails. This creates training data for an AI agent to understand transaction coordinator workflows.
+**DealTrail** is building an autonomous AI transaction coordinator for real estate. We're training an agent to handle the relationship-heavy work of managing deals from offer to close.
 
-**Status**: WIP - Core annotation UI complete, export functionality in progress.
+**Current focus**: TraceWriter - an annotation tool for capturing "off-screen actions" in TC email threads (the phone calls, document reviews, and coordination that happens between emails).
+
+**Status**: Phase 1 (data collection) - annotation UI and import complete, export not yet implemented.
 
 ## Why
 
-Real estate transaction coordinators handle complex email threads where critical actions (phone calls, document reviews, escrow updates) aren't visible in the email chain. By annotating these gaps, we're building training data to teach AI agents what actually happens between emails.
+Transaction coordinators do critical work that never appears in email: deadline tracking, stakeholder coordination, document reviews, follow-ups. By annotating these gaps in real email threads, we're building training data that captures what *actually* happens in transactions.
 
 ## How
 
@@ -29,15 +31,15 @@ tracewriter/           # React/Vite app - the annotation tool
   src/App.jsx          # Main component (keyboard navigation, state)
   src/utils/           # Email parsing utilities
   scripts/             # Python MBOX processing scripts
-plans/                 # Implementation specifications
 hack/                  # Developer utilities (Linear CLI, scripts)
+thoughts/              # Research docs, plans, handoffs (git-ignored)
 ```
 
 ### Key Files
 
 - `tracewriter/src/App.jsx` - Main UI with keyboard-first navigation
 - `tracewriter/scripts/mbox_to_json.py` - Converts MBOX to property-grouped JSON
-- `plans/2024-12-16-tracewriter-email-annotation-tool.md` - Full implementation spec
+- `thoughts/shared/plans/2024-12-16-tracewriter-email-annotation-tool.md` - Full implementation spec
 
 ### Tech Stack
 
@@ -47,7 +49,7 @@ hack/                  # Developer utilities (Linear CLI, scripts)
 
 ### Data Flow
 
-MBOX export -> Python preprocessing (groups by property) -> JSON -> TraceWriter UI -> Annotated JSON
+MBOX export -> Python preprocessing (groups by property) -> JSON -> TraceWriter UI -> Annotations (in-memory only, export TODO)
 
 ### Keyboard Navigation
 

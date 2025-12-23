@@ -1,20 +1,25 @@
-# TraceWriter
+# DealTrail
 
-**Capture the work that happens between emails.**
+**Building an autonomous AI transaction coordinator.**
 
-TraceWriter is a keyboard-first annotation tool for documenting "off-screen actions" in email threads—the phone calls, document reviews, and decisions that happen between messages but never appear in the email chain.
+DealTrail is training an AI agent to handle real estate transaction coordination—the relationship-heavy work of managing 8-15 stakeholders (buyers, sellers, agents, lenders, escrow, title) through complex deals from offer to close.
 
-## The Problem
+## The Approach
 
-Real estate transaction coordinators manage complex deals through email, but the most critical work happens *off-screen*:
+Transaction coordinators manage deals through email, but the critical work happens *off-screen*: phone calls, document reviews, deadline tracking, follow-ups. This hidden work is what makes deals close.
 
-- "Called the lender to expedite appraisal"
-- "Reviewed contract and flagged contingency deadline"
-- "Coordinated with escrow to release earnest money"
+We're building training data by annotating real TC email threads—capturing what happened between each message. Then training an AI agent that understands not just the emails, but the invisible coordination that drives transactions forward.
 
-These actions drive transactions forward but leave no trace in the email history. TraceWriter captures this invisible work to create training data for AI agents that understand real transaction workflows.
+**Current phase**: Data collection with TraceWriter
+**Next**: Action taxonomy → Training pipeline → Agent deployment
 
-## Quick Start
+---
+
+## TraceWriter
+
+Keyboard-first annotation tool for capturing off-screen actions in email threads.
+
+### Quick Start
 
 ```bash
 # Clone and install
@@ -28,32 +33,34 @@ npm run dev
 
 Then import your preprocessed email JSON and start annotating.
 
-## Workflow
+### Workflow
 
 ```
 ┌─────────────┐     ┌──────────────────┐     ┌─────────────┐     ┌──────────────┐
 │ Gmail MBOX  │ ──▶ │ Python Preprocess │ ──▶ │ TraceWriter │ ──▶ │ Annotated    │
-│ Export      │     │ (group by property)│     │ UI          │     │ JSON         │
+│ Export      │     │ (group by property)│     │ UI          │     │ JSON (TODO)  │
 └─────────────┘     └──────────────────┘     └─────────────┘     └──────────────┘
 ```
 
-### 1. Export emails from Gmail as MBOX
+**1. Export emails from Gmail as MBOX**
 
-### 2. Preprocess with Python
+**2. Preprocess with Python**
 ```bash
 python tracewriter/scripts/mbox_to_json.py input.mbox output.json
 ```
 This groups emails by property address (not traditional threading) and cleans up signatures, quoted replies, and HTML.
 
-### 3. Annotate in TraceWriter
+**3. Annotate in TraceWriter**
+
 Import the JSON and document what happened between each email pair.
 
-### 4. Export annotated data
-JSON output includes `_annotation_after` fields for each email gap.
+**4. Export annotated data** *(coming soon)*
 
-## Keyboard Navigation
+Export functionality is not yet implemented. Annotations are currently stored in-memory only.
 
-TraceWriter is built for speed. Keep your hands on the keyboard:
+### Keyboard Navigation
+
+TraceWriter is built for speed:
 
 | Key | Action |
 |-----|--------|
@@ -62,23 +69,20 @@ TraceWriter is built for speed. Keep your hands on the keyboard:
 | `Enter` | Edit annotation for current gap |
 | `Esc` | Exit edit mode |
 
-## Project Structure
+### Project Structure
 
 ```
-tracewriter/
-├── src/
-│   ├── App.jsx              # Main UI component
-│   └── utils/emailParser.js # Import/export handling
-├── scripts/
-│   ├── mbox_to_json.py      # MBOX → JSON converter
-│   └── analyze_unmatched_emails.py
-└── package.json
-
-plans/                       # Implementation specs
-hack/                        # Developer utilities
+dealtrail/
+├── tracewriter/             # Annotation tool (current focus)
+│   ├── src/
+│   │   ├── App.jsx          # Main UI component
+│   │   └── utils/           # Email parsing utilities
+│   └── scripts/
+│       └── mbox_to_json.py  # MBOX → JSON converter
+└── hack/                    # Developer utilities
 ```
 
-## Tech Stack
+### Tech Stack
 
 - **Frontend**: React 19, Vite 7, pure CSS
 - **Data Processing**: Python 3 (MBOX parsing)
@@ -86,20 +90,22 @@ hack/                        # Developer utilities
 
 ## Status
 
-**Work in Progress**
+**Phase 1: TraceWriter** (in progress)
 
 - [x] Core annotation UI with keyboard navigation
 - [x] MBOX preprocessing pipeline
-- [x] JSON import/export
+- [x] JSON import
+- [ ] JSON export
 - [x] Thread sidebar navigation
 - [ ] localStorage persistence
 - [ ] Export to training format
-- [ ] Jump to next unannotated gap
 
-## Why "TraceWriter"?
+**Future phases**
 
-Transaction coordinators leave traces of their work scattered across emails, but the most important actions—the calls, the reviews, the coordination—leave no trace at all. TraceWriter captures these invisible traces to teach AI what really happens in a transaction.
+- [ ] Action taxonomy discovery
+- [ ] Training pipeline
+- [ ] Agent deployment
 
 ---
 
-*Building training data for AI agents that understand real estate workflows.*
+*Training an AI to do the invisible work that makes real estate deals close.*

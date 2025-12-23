@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
+import { parsePreprocessedJson, parseAnnotatedExport, hasExistingAnnotations } from './utils/emailParser';
 
 // Mock data to simulate Gmail threads
 const mockThreads = [
@@ -33,7 +34,7 @@ const mockThreads = [
 ];
 
 export default function App() {
-  const [threads, _setThreads] = useState(mockThreads);
+  const [threads, setThreads] = useState(mockThreads);
   const [currentThreadIndex, setCurrentThreadIndex] = useState(0);
   const [currentEmailIndex, setCurrentEmailIndex] = useState(0);
   const [annotations, setAnnotations] = useState({});
@@ -166,9 +167,21 @@ export default function App() {
   // Calculate total gaps in current thread
   const totalGaps = Math.max(0, totalEmails - 1);
 
-  // Placeholder handlers for import/export (to be implemented in later phases)
+  // Handle JSON import (from preprocessed MBOX or annotated export)
   const handleImport = (json) => {
-    console.log('Import handler - to be implemented', json);
+    if (hasExistingAnnotations(json)) {
+      // Re-importing annotated export
+      const { threads: parsed, annotations: existingAnnotations } = parseAnnotatedExport(json);
+      setThreads(parsed);
+      setAnnotations(prev => ({ ...prev, ...existingAnnotations }));
+    } else {
+      // Fresh preprocessed JSON from Python script
+      const parsed = parsePreprocessedJson(json);
+      setThreads(parsed);
+    }
+    setCurrentThreadIndex(0);
+    setCurrentEmailIndex(0);
+    setFocusedAnnotation(null);
   };
 
   const handleExport = () => {

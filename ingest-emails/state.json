@@ -1,0 +1,23 @@
+{
+    "transaction_id_12345": {
+        "Access_PID": ["EWKRJWIEY87P23ORJ3"], 
+        "Address": "1234 Main St.",
+        "Buy_Side": {
+            "Agent": {
+                "PID": "EWKRJWIEY87P23ORJ3",
+                "Name": "Tim Cook",
+                "Firm": "Compass",
+                "Email": "tim_cook@compass.com",
+                "Phone": "123-456-7890"
+            },
+            "Client": ["John Doe", "Jane Doe"]
+        },
+        "Sell_Side": {},
+        "State": "Escrow",
+        "Tasks": {
+            "Completed": [],
+            "Pending": [],
+            "Upcoming": []
+        }
+    }
+}

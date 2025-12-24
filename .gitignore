@@ -27,3 +27,7 @@ npm-debug.log*
 *.swp
 *.swo
 thoughts/
+
+
+# Noam 
+noam_thoughts.md

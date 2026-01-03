@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './index.css';
 import { parsePreprocessedJson, parseAnnotatedExport, hasExistingAnnotations } from './utils/emailParser';
 import { generateExport, downloadJson } from './utils/exportAnnotations';
+import { useCloudStorage } from './hooks/useCloudStorage';
 
 // Create mock data in new format
 const mockProperties = [
@@ -44,6 +45,18 @@ export default function App() {
   const [annotations, setAnnotations] = useState({});
   const [focusedAnnotation, setFocusedAnnotation] = useState(null);
   const [expandedProperties, setExpandedProperties] = useState(new Set([mockProperties[0]?.id]));
+
+  // Cloud storage for persistence
+  const { saveState } = useCloudStorage({
+    properties,
+    setProperties,
+    annotations,
+    setAnnotations,
+    setCurrentPropertyIndex,
+    setCurrentThreadIndex,
+    setCurrentEmailIndex,
+    setExpandedProperties,
+  });
 
   const currentProperty = properties[currentPropertyIndex] || { subject: 'No properties', threads: [] };
   const currentThread = currentProperty.threads[currentThreadIndex] || { subject: 'No threads', emails: [] };
@@ -190,23 +203,29 @@ export default function App() {
 
   // Handle JSON import (from preprocessed MBOX or annotated export)
   const handleImport = (json) => {
+    let parsedProperties;
     if (hasExistingAnnotations(json)) {
       // Re-importing annotated export
       const { properties: parsed, annotations: existingAnnotations } = parseAnnotatedExport(json);
+      parsedProperties = parsed;
       setProperties(parsed);
       setAnnotations(prev => ({ ...prev, ...existingAnnotations }));
+      // Save immediately after import
+      saveState(parsed, { ...annotations, ...existingAnnotations });
     } else {
       // Fresh preprocessed JSON from Python script
-      const parsed = parsePreprocessedJson(json);
-      setProperties(parsed);
+      parsedProperties = parsePreprocessedJson(json);
+      setProperties(parsedProperties);
+      // Save immediately after import
+      saveState(parsedProperties, annotations);
     }
     setCurrentPropertyIndex(0);
     setCurrentThreadIndex(0);
     setCurrentEmailIndex(0);
     setFocusedAnnotation(null);
     // Expand first property by default
-    if (json.length > 0) {
-      setExpandedProperties(new Set([json[0]?.id || 'prop_0']));
+    if (parsedProperties.length > 0) {
+      setExpandedProperties(new Set([parsedProperties[0]?.id]));
     }
   };
 

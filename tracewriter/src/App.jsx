@@ -2,46 +2,52 @@ import React, { useState, useEffect } from 'react';
 import './index.css';
 import { parsePreprocessedJson, parseAnnotatedExport, hasExistingAnnotations } from './utils/emailParser';
 
-// Mock data to simulate Gmail threads
-const mockThreads = [
+// Create mock data in new format
+const mockProperties = [
   {
-    id: 'thread_1',
-    subject: '123 Oak Street - Disclosure Documents',
-    emails: [
-      { id: 1, from: 'buyer@email.com', dateDisplay: 'Dec 12, 2:34 PM', body: 'Hi Matan, we reviewed the inspection report and have some concerns about the roof. Can you send over the seller\'s disclosure?' },
-      { id: 2, from: 'matan@theagency.com', dateDisplay: 'Dec 12, 3:15 PM', body: 'Of course! I\'ll get that over to you right away. The seller completed it last week.' },
-      { id: 3, from: 'matan@theagency.com', dateDisplay: 'Dec 12, 3:45 PM', body: 'Here\'s the signed disclosure. Let me know if you have any questions about the roof - the seller did have it inspected 2 years ago.' },
-      { id: 4, from: 'buyer@email.com', dateDisplay: 'Dec 12, 5:02 PM', body: 'Thanks! Can we get a copy of that roof inspection report as well?' },
-    ]
-  },
-  {
-    id: 'thread_2',
-    subject: '456 Maple Ave - Escrow Timeline',
-    emails: [
-      { id: 1, from: 'title@titleco.com', dateDisplay: 'Dec 11, 10:00 AM', body: 'We need the amended purchase agreement to proceed with escrow. Current close date is Dec 28.' },
-      { id: 2, from: 'matan@theagency.com', dateDisplay: 'Dec 11, 11:30 AM', body: 'Understood. I\'ll coordinate with both parties and get that to you by EOD tomorrow.' },
-      { id: 3, from: 'matan@theagency.com', dateDisplay: 'Dec 13, 9:15 AM', body: 'Attached is the fully executed amendment. New close date is Jan 5. Please confirm receipt.' },
-    ]
-  },
-  {
-    id: 'thread_3',
-    subject: '789 Pine Rd - Inspection Scheduling',
-    emails: [
-      { id: 1, from: 'selleragent@realty.com', dateDisplay: 'Dec 10, 4:00 PM', body: 'Buyer wants to schedule inspection for this week. What times work for access?' },
-      { id: 2, from: 'matan@theagency.com', dateDisplay: 'Dec 10, 4:30 PM', body: 'Let me check with the sellers and get back to you within the hour.' },
+    id: 'prop_mock',
+    subject: 'Sample Property',
+    property: 'sample property',
+    threadCount: 2,
+    emailCount: 5,
+    threads: [
+      {
+        id: 'prop_mock_thread_0',
+        subject: '123 Oak Street - Disclosure Documents',
+        emailCount: 4,
+        emails: [
+          { id: 1, from: 'buyer@email.com', dateDisplay: 'Dec 12, 2:34 PM', body: 'Hi Matan, we reviewed the inspection report and have some concerns about the roof.' },
+          { id: 2, from: 'matan@theagency.com', dateDisplay: 'Dec 12, 3:15 PM', body: 'Of course! I\'ll get that over to you right away.' },
+          { id: 3, from: 'matan@theagency.com', dateDisplay: 'Dec 12, 3:45 PM', body: 'Here\'s the signed disclosure. Let me know if you have any questions.' },
+          { id: 4, from: 'buyer@email.com', dateDisplay: 'Dec 12, 5:02 PM', body: 'Thanks! Can we get a copy of that roof inspection report as well?' },
+        ]
+      },
+      {
+        id: 'prop_mock_thread_1',
+        subject: '123 Oak Street - Escrow Timeline',
+        emailCount: 2,
+        emails: [
+          { id: 1, from: 'title@titleco.com', dateDisplay: 'Dec 11, 10:00 AM', body: 'We need the amended purchase agreement to proceed with escrow.' },
+          { id: 2, from: 'matan@theagency.com', dateDisplay: 'Dec 11, 11:30 AM', body: 'Understood. I\'ll coordinate with both parties.' },
+        ]
+      }
     ]
   }
 ];
 
 export default function App() {
-  const [threads, setThreads] = useState(mockThreads);
+  const [properties, setProperties] = useState(mockProperties);
+  const [currentPropertyIndex, setCurrentPropertyIndex] = useState(0);
   const [currentThreadIndex, setCurrentThreadIndex] = useState(0);
   const [currentEmailIndex, setCurrentEmailIndex] = useState(0);
   const [annotations, setAnnotations] = useState({});
   const [focusedAnnotation, setFocusedAnnotation] = useState(null);
+  const [expandedProperties, setExpandedProperties] = useState(new Set([mockProperties[0]?.id]));
 
-  const currentThread = threads[currentThreadIndex] || { subject: 'No threads loaded', emails: [] };
-  const totalThreads = threads.length;
+  const currentProperty = properties[currentPropertyIndex] || { subject: 'No properties', threads: [] };
+  const currentThread = currentProperty.threads[currentThreadIndex] || { subject: 'No threads', emails: [] };
+  const totalProperties = properties.length;
+  const totalThreads = currentProperty.threads.length;
   const totalEmails = currentThread.emails.length;
 
   // Get annotation key for a gap
@@ -59,7 +65,6 @@ export default function App() {
           if (currentEmailIndex > 0) {
             const newIndex = currentEmailIndex - 1;
             setCurrentEmailIndex(newIndex);
-            // Only auto-focus if in edit mode
             if (inEditMode) {
               setFocusedAnnotation(getAnnotationKey(currentThread.id, newIndex));
             }
@@ -69,7 +74,6 @@ export default function App() {
           if (currentEmailIndex < totalEmails - 1) {
             const newIndex = currentEmailIndex + 1;
             setCurrentEmailIndex(newIndex);
-            // Only auto-focus if in edit mode and not on last email
             if (inEditMode && newIndex < totalEmails - 1) {
               setFocusedAnnotation(getAnnotationKey(currentThread.id, newIndex));
             } else if (inEditMode) {
@@ -80,14 +84,42 @@ export default function App() {
       } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
 
-        if (e.shiftKey) {
-          // Shift+Arrow: switch threads
+        if (e.metaKey && e.shiftKey) {
+          // Cmd+Shift+Arrow: switch properties
+          if (e.key === 'ArrowDown') {
+            if (currentPropertyIndex < totalProperties - 1) {
+              const nextProperty = properties[currentPropertyIndex + 1];
+              setCurrentPropertyIndex(i => i + 1);
+              setCurrentThreadIndex(0);
+              setCurrentEmailIndex(0);
+              setExpandedProperties(prev => new Set([...prev, nextProperty.id]));
+              if (inEditMode && nextProperty.threads[0]?.emails.length > 1) {
+                setFocusedAnnotation(getAnnotationKey(nextProperty.threads[0].id, 0));
+              } else {
+                setFocusedAnnotation(null);
+              }
+            }
+          } else {
+            if (currentPropertyIndex > 0) {
+              const prevProperty = properties[currentPropertyIndex - 1];
+              setCurrentPropertyIndex(i => i - 1);
+              setCurrentThreadIndex(0);
+              setCurrentEmailIndex(0);
+              setExpandedProperties(prev => new Set([...prev, prevProperty.id]));
+              if (inEditMode && prevProperty.threads[0]?.emails.length > 1) {
+                setFocusedAnnotation(getAnnotationKey(prevProperty.threads[0].id, 0));
+              } else {
+                setFocusedAnnotation(null);
+              }
+            }
+          }
+        } else if (e.shiftKey) {
+          // Shift+Arrow: switch threads within property
           if (e.key === 'ArrowDown') {
             if (currentThreadIndex < totalThreads - 1) {
-              const nextThread = threads[currentThreadIndex + 1];
+              const nextThread = currentProperty.threads[currentThreadIndex + 1];
               setCurrentThreadIndex(i => i + 1);
               setCurrentEmailIndex(0);
-              // Only auto-focus if in edit mode and thread has gaps
               if (inEditMode && nextThread.emails.length > 1) {
                 setFocusedAnnotation(getAnnotationKey(nextThread.id, 0));
               } else {
@@ -96,10 +128,9 @@ export default function App() {
             }
           } else {
             if (currentThreadIndex > 0) {
-              const prevThread = threads[currentThreadIndex - 1];
+              const prevThread = currentProperty.threads[currentThreadIndex - 1];
               setCurrentThreadIndex(i => i - 1);
               setCurrentEmailIndex(0);
-              // Only auto-focus if in edit mode and thread has gaps
               if (inEditMode && prevThread.emails.length > 1) {
                 setFocusedAnnotation(getAnnotationKey(prevThread.id, 0));
               } else {
@@ -108,12 +139,11 @@ export default function App() {
             }
           }
         } else {
-          // Arrow without Shift: navigate emails
+          // Arrow without modifiers: navigate emails
           if (e.key === 'ArrowDown') {
             if (currentEmailIndex < totalEmails - 1) {
               const newIndex = currentEmailIndex + 1;
               setCurrentEmailIndex(newIndex);
-              // Only auto-focus if in edit mode and not on last email
               if (inEditMode && newIndex < totalEmails - 1) {
                 setFocusedAnnotation(getAnnotationKey(currentThread.id, newIndex));
               } else if (inEditMode) {
@@ -124,7 +154,6 @@ export default function App() {
             if (currentEmailIndex > 0) {
               const newIndex = currentEmailIndex - 1;
               setCurrentEmailIndex(newIndex);
-              // Only auto-focus if in edit mode
               if (inEditMode) {
                 setFocusedAnnotation(getAnnotationKey(currentThread.id, newIndex));
               }
@@ -132,13 +161,11 @@ export default function App() {
           }
         }
       } else if (e.key === 'Enter' && !inEditMode && !e.shiftKey) {
-        // Enter: start editing (enter edit mode)
         e.preventDefault();
         if (currentEmailIndex < totalEmails - 1) {
           setFocusedAnnotation(getAnnotationKey(currentThread.id, currentEmailIndex));
         }
       } else if (e.key === 'Escape') {
-        // Escape: exit edit mode
         setFocusedAnnotation(null);
         document.activeElement.blur();
       }
@@ -146,7 +173,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentEmailIndex, currentThreadIndex, totalEmails, totalThreads, currentThread.id, threads, focusedAnnotation]);
+  }, [currentEmailIndex, currentThreadIndex, currentPropertyIndex, totalEmails, totalThreads, totalProperties, currentThread.id, currentProperty, properties, focusedAnnotation]);
 
   // Auto-focus annotation input when focused
   useEffect(() => {
@@ -160,28 +187,26 @@ export default function App() {
     setAnnotations(prev => ({ ...prev, [key]: value }));
   };
 
-  const getAnnotatedCount = () => {
-    return Object.keys(annotations).filter(k => k.startsWith(currentThread.id) && annotations[k]?.trim()).length;
-  };
-
-  // Calculate total gaps in current thread
-  const totalGaps = Math.max(0, totalEmails - 1);
-
   // Handle JSON import (from preprocessed MBOX or annotated export)
   const handleImport = (json) => {
     if (hasExistingAnnotations(json)) {
       // Re-importing annotated export
-      const { threads: parsed, annotations: existingAnnotations } = parseAnnotatedExport(json);
-      setThreads(parsed);
+      const { properties: parsed, annotations: existingAnnotations } = parseAnnotatedExport(json);
+      setProperties(parsed);
       setAnnotations(prev => ({ ...prev, ...existingAnnotations }));
     } else {
       // Fresh preprocessed JSON from Python script
       const parsed = parsePreprocessedJson(json);
-      setThreads(parsed);
+      setProperties(parsed);
     }
+    setCurrentPropertyIndex(0);
     setCurrentThreadIndex(0);
     setCurrentEmailIndex(0);
     setFocusedAnnotation(null);
+    // Expand first property by default
+    if (json.length > 0) {
+      setExpandedProperties(new Set([json[0]?.id || 'prop_0']));
+    }
   };
 
   const handleExport = () => {
@@ -206,20 +231,21 @@ export default function App() {
         alignItems: 'center'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ color: '#8a8480' }}>threads</span>
+          <span style={{ color: '#8a8480' }}>properties</span>
           <span style={{ color: '#4a4745' }}>/</span>
-          <span style={{ color: '#c9a86c' }}>{currentThread.subject}</span>
+          <span style={{ color: '#c9a86c' }}>{currentProperty.subject}</span>
+          <span style={{ color: '#4a4745' }}>/</span>
+          <span style={{
+            color: '#8a8480',
+            maxWidth: '400px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {currentThread.subject}
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ color: '#5a5755', fontSize: '12px' }}>
-            {totalThreads > 0 && (
-              <>
-                {currentThreadIndex + 1}/{totalThreads} threads
-                {' · '}
-                {getAnnotatedCount()}/{totalGaps} annotated
-              </>
-            )}
-          </div>
           <button
             onClick={() => document.getElementById('file-input').click()}
             style={{
@@ -255,7 +281,7 @@ export default function App() {
               e.target.value = '';
             }}
           />
-          {totalThreads > 0 && (
+          {totalProperties > 0 && (
             <button
               onClick={handleExport}
               style={{
@@ -276,36 +302,102 @@ export default function App() {
       </div>
 
       <div style={{ display: 'flex', height: 'calc(100vh - 100px)' }}>
-        {/* Thread list sidebar */}
+        {/* Property/Thread list sidebar */}
         <div style={{
-          width: '280px',
+          width: '300px',
           borderRight: '1px solid #2a2725',
           padding: '12px 0',
           overflowY: 'auto'
         }}>
-          {threads.map((thread, idx) => (
-            <div
-              key={thread.id}
-              onClick={() => { setCurrentThreadIndex(idx); setCurrentEmailIndex(0); setFocusedAnnotation(null); }}
-              style={{
-                padding: '10px 16px',
-                cursor: 'pointer',
-                backgroundColor: idx === currentThreadIndex ? '#252220' : 'transparent',
-                borderLeft: idx === currentThreadIndex ? '2px solid #c9a86c' : '2px solid transparent',
-              }}
-            >
-              <div style={{
-                color: idx === currentThreadIndex ? '#e8e4df' : '#8a8480',
-                marginBottom: '4px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
-                {thread.subject}
+          {properties.map((property, propIdx) => (
+            <div key={property.id}>
+              {/* Property header */}
+              <div
+                onClick={() => {
+                  setExpandedProperties(prev => {
+                    const next = new Set(prev);
+                    if (next.has(property.id)) {
+                      next.delete(property.id);
+                    } else {
+                      next.add(property.id);
+                    }
+                    return next;
+                  });
+                  if (propIdx !== currentPropertyIndex) {
+                    setCurrentPropertyIndex(propIdx);
+                    setCurrentThreadIndex(0);
+                    setCurrentEmailIndex(0);
+                    setFocusedAnnotation(null);
+                  }
+                }}
+                style={{
+                  padding: '10px 16px',
+                  cursor: 'pointer',
+                  backgroundColor: propIdx === currentPropertyIndex ? '#252220' : 'transparent',
+                  borderLeft: propIdx === currentPropertyIndex ? '2px solid #c9a86c' : '2px solid transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <span style={{
+                  color: '#5a5755',
+                  fontSize: '10px',
+                  width: '12px',
+                }}>
+                  {expandedProperties.has(property.id) ? '▼' : '▶'}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    color: propIdx === currentPropertyIndex ? '#c9a86c' : '#e8e4df',
+                    fontWeight: propIdx === currentPropertyIndex ? '500' : '400',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {property.subject}
+                  </div>
+                  <div style={{ color: '#5a5755', fontSize: '11px' }}>
+                    {property.threadCount} threads · {property.emailCount} emails
+                  </div>
+                </div>
               </div>
-              <div style={{ color: '#5a5755', fontSize: '11px' }}>
-                {thread.emails.length} emails
-              </div>
+
+              {/* Threads within property */}
+              {expandedProperties.has(property.id) && (
+                <div style={{ marginLeft: '20px' }}>
+                  {property.threads.map((thread, threadIdx) => (
+                    <div
+                      key={thread.id}
+                      onClick={() => {
+                        setCurrentPropertyIndex(propIdx);
+                        setCurrentThreadIndex(threadIdx);
+                        setCurrentEmailIndex(0);
+                        setFocusedAnnotation(null);
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        cursor: 'pointer',
+                        backgroundColor: propIdx === currentPropertyIndex && threadIdx === currentThreadIndex ? '#1e1c1a' : 'transparent',
+                        borderLeft: propIdx === currentPropertyIndex && threadIdx === currentThreadIndex ? '2px solid #7a9f6a' : '2px solid transparent',
+                      }}
+                    >
+                      <div style={{
+                        color: propIdx === currentPropertyIndex && threadIdx === currentThreadIndex ? '#e8e4df' : '#8a8480',
+                        fontSize: '12px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {thread.subject}
+                      </div>
+                      <div style={{ color: '#5a5755', fontSize: '10px' }}>
+                        {thread.emailCount || thread.emails?.length || 0} emails
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -412,27 +504,37 @@ export default function App() {
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <div style={{ display: 'flex', gap: '24px' }}>
+        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
           <span style={{ color: '#5a5755' }}>
-            <span style={{ color: '#8a8480', backgroundColor: '#252220', padding: '2px 6px', borderRadius: '3px', marginRight: '6px' }}>↑/↓ or Tab</span>
-            navigate emails
+            <span style={{ color: '#8a8480', backgroundColor: '#252220', padding: '2px 6px', borderRadius: '3px', marginRight: '6px' }}>↑/↓</span>
+            emails
           </span>
           <span style={{ color: '#5a5755' }}>
-            <span style={{ color: '#8a8480', backgroundColor: '#252220', padding: '2px 6px', borderRadius: '3px', marginRight: '6px' }}>Shift+↑/↓</span>
-            switch thread
+            <span style={{ color: '#8a8480', backgroundColor: '#252220', padding: '2px 6px', borderRadius: '3px', marginRight: '6px' }}>⇧↑/↓</span>
+            threads
+          </span>
+          <span style={{ color: '#5a5755' }}>
+            <span style={{ color: '#8a8480', backgroundColor: '#252220', padding: '2px 6px', borderRadius: '3px', marginRight: '6px' }}>⌘⇧↑/↓</span>
+            properties
           </span>
           <span style={{ color: '#5a5755' }}>
             <span style={{ color: '#8a8480', backgroundColor: '#252220', padding: '2px 6px', borderRadius: '3px', marginRight: '6px' }}>Enter</span>
-            edit mode
+            edit
           </span>
           <span style={{ color: '#5a5755' }}>
             <span style={{ color: '#8a8480', backgroundColor: '#252220', padding: '2px 6px', borderRadius: '3px', marginRight: '6px' }}>Esc</span>
-            view mode
+            view
           </span>
         </div>
         <div style={{ color: '#5a5755', fontSize: '12px' }}>
           <span style={{ color: '#c9a86c' }}>TRACEWRITER</span>
-          <span style={{ marginLeft: '12px' }}>email {currentEmailIndex + 1}/{totalEmails}</span>
+          <span style={{ marginLeft: '12px' }}>
+            {currentPropertyIndex + 1}/{totalProperties} properties
+            {' · '}
+            {currentThreadIndex + 1}/{totalThreads} threads
+            {' · '}
+            email {currentEmailIndex + 1}/{totalEmails}
+          </span>
         </div>
       </div>
     </div>

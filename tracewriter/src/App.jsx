@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
 import { parsePreprocessedJson, parseAnnotatedExport, hasExistingAnnotations } from './utils/emailParser';
+import { generateExport, downloadJson } from './utils/exportAnnotations';
 
 // Create mock data in new format
 const mockProperties = [
@@ -210,7 +211,9 @@ export default function App() {
   };
 
   const handleExport = () => {
-    console.log('Export handler - to be implemented');
+    const exportData = generateExport(properties, annotations);
+    const filename = `tracewriter-export-${new Date().toISOString().split('T')[0]}.json`;
+    downloadJson(exportData, filename);
   };
 
   return (
